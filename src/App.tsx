@@ -16,6 +16,14 @@ import { Diamond } from "./components/Nodes/Diamond";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
 import React, { useCallback, useEffect, useState } from "react";
 
+type NodeType = "square" | "circle" | "diamond";
+
+interface Node {
+  id: string;
+  type: NodeType;
+  position: { x: number; y: number };
+  data: { label: string };
+}
 
 const NODE_TYPES = {
   square: Square,
@@ -85,58 +93,44 @@ function App() {
       data: { label: `${type.charAt(0).toUpperCase()}${type.slice(1)} Node` },
     };
     setNodes((prevNodes) => [...prevNodes, newNode]);
-  }, [nodes]);
+  }, [nodes]);  
 
   function addSquareNode() {
-    setNodes(node => [
-      ...nodes, 
+    setNodes((prevNodes) => [
+      ...prevNodes,
       {
         id: crypto.randomUUID(),
         type: "square",
-        data: {
-          label: 'Square Node'
-        },
-        position: {
-          x: 0,
-          y: 0,
-        },
+        data: { label: 'Square Node' },
+        position: { x: 0, y: 0 },
       },
-    ])
+    ]);
   }
-
+  
   function addCircleNode() {
-    setNodes(node => [
-      ...nodes, 
+    setNodes((prevNodes) => [
+      ...prevNodes,
       {
         id: crypto.randomUUID(),
         type: "circle",
-        data: {
-          label: 'Circle Node'
-        },
-        position: {
-          x: 0,
-          y: 0,
-        },
+        data: { label: 'Circle Node' },
+        position: { x: 0, y: 0 },
       },
-    ])
+    ]);
   }
-
+  
   function addDiamondNode() {
-    setNodes(node => [
-      ...nodes, 
+    setNodes((prevNodes) => [
+      ...prevNodes,
       {
         id: crypto.randomUUID(),
         type: "diamond",
-        data: {
-          label: 'Diamond Node'
-        },
-        position: {
-          x: 0,
-          y: 0,
-        },
+        data: { label: 'Diamond Node' },
+        position: { x: 0, y: 0 },
       },
-    ])
+    ]);
   }
+  
 
   return (
     <div className="w-screen h-screen">

@@ -1,6 +1,6 @@
 import { EdgeProps, getSmoothStepPath } from 'reactflow';
 import { useState } from 'react';
-import Draggable from 'react-draggable';
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 
 export function DefaultEdge({
   id,
@@ -12,7 +12,7 @@ export function DefaultEdge({
   targetPosition,
   style = {},
   markerEnd,
-}: EdgeProps ) {
+}: EdgeProps) {
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -22,14 +22,14 @@ export function DefaultEdge({
     targetPosition,
   });
 
-  const [label, setLabel] = useState("");
-  const [position, setPosition] = useState({ x: labelX, y: labelY });
+  const [label, setLabel] = useState<string>("");
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: labelX, y: labelY });
 
-  const handleLabelChange = (event) => {
+  const handleLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setLabel(event.target.value);
   };
 
-  const handleDrag = (e, data) => {
+  const handleDrag = (e: DraggableEvent, data: DraggableData) => {
     setPosition({ x: data.x, y: data.y });
   };
 

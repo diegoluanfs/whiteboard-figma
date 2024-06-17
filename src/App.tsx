@@ -7,14 +7,14 @@ import ReactFlow, {
   useEdgesState,
   useNodesState,
 } from "reactflow";
-import * as Toolbar from "@radix-ui/react-toolbar";
 import { zinc } from "tailwindcss/colors";
 import "reactflow/dist/style.css";
 import { Square } from "./components/Nodes/Square";
 import { Circle } from "./components/Nodes/Circle";
 import { Diamond } from "./components/Nodes/Diamond";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback } from "react";
+import Toolbar from './components/Toolbar';
 
 type NodeType = "square" | "circle" | "diamond";
 
@@ -35,7 +35,7 @@ const EDGE_TYPES = {
   default: DefaultEdge,
 };
 
-const INITIAL_NODES = [
+const INITIAL_NODES: Node[] = [
   {
     id: "start",
     type: "circle",
@@ -63,7 +63,7 @@ const INITIAL_NODES = [
     },
     data: { label: 'Node 4' },
   },
-] satisfies Node[];
+];
 
 function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -71,66 +71,38 @@ function App() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const existingEdge = edges.find(
-        (edge) =>
-          edge.source === connection.source && edge.target === connection.target
-      );
-
-      // Verifica se já existe um edge com a mesma origem e destino
-      if (!existingEdge) {
+      // Verifica se a conexão é entre nós diferentes
+      if (connection.source !== connection.target) {
+        const existingEdgeIndex = edges.findIndex(
+          (edge) =>
+            edge.source === connection.source && edge.target === connection.target
+        );
+  
+        // Verifica se já existe um edge com a mesma origem e destino
+        if (existingEdgeIndex !== -1) {
+          // Remove o edge existente
+          const newEdges = [...edges];
+          newEdges.splice(existingEdgeIndex, 1);
+          setEdges(newEdges);
+        }
+  
         // Adiciona o edge apenas se não houver um existente
         setEdges((prevEdges) => addEdge(connection, prevEdges));
       }
     },
     [edges, setEdges]
   );
+   
 
   const addNode = useCallback((type: NodeType) => {
     const newNode: Node = {
-      id: `node-${nodes.length + 1}`,
+      id: crypto.randomUUID(),
       type,
       position: { x: 0, y: 0 },
       data: { label: `${type.charAt(0).toUpperCase()}${type.slice(1)} Node` },
     };
     setNodes((prevNodes) => [...prevNodes, newNode]);
-  }, [nodes]);  
-
-  function addSquareNode() {
-    setNodes((prevNodes) => [
-      ...prevNodes,
-      {
-        id: crypto.randomUUID(),
-        type: "square",
-        data: { label: 'Square Node' },
-        position: { x: 0, y: 0 },
-      },
-    ]);
-  }
-  
-  function addCircleNode() {
-    setNodes((prevNodes) => [
-      ...prevNodes,
-      {
-        id: crypto.randomUUID(),
-        type: "circle",
-        data: { label: 'Circle Node' },
-        position: { x: 0, y: 0 },
-      },
-    ]);
-  }
-  
-  function addDiamondNode() {
-    setNodes((prevNodes) => [
-      ...prevNodes,
-      {
-        id: crypto.randomUUID(),
-        type: "diamond",
-        data: { label: 'Diamond Node' },
-        position: { x: 0, y: 0 },
-      },
-    ]);
-  }
-  
+  }, [setNodes]);
 
   return (
     <div className="w-screen h-screen">
@@ -151,28 +123,12 @@ function App() {
         <Controls />
       </ReactFlow>
 
-      <Toolbar.Root 
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lg border-zinc-300 px-8 h-20 w-96 overflow-hidden flex justify-around items-center"
-      >
-        <Toolbar.Button 
-          onClick={addSquareNode}
-          className='w-16 h-16 bg-violet-500 mt-6 rounded transition-transform hover:-translate-y-2 flex items-center justify-center'
-        >
-          <span className="text-white">Square</span>
-        </Toolbar.Button>
-        <Toolbar.Button 
-          onClick={addCircleNode}
-          className='w-16 h-16 bg-violet-500 mt-6 rounded-full transition-transform hover:-translate-y-2 flex items-center justify-center'
-        >
-          <span className="text-white">Circle</span>
-        </Toolbar.Button>
-        <Toolbar.Button 
-          onClick={addDiamondNode}
-          className='w-12 h-12 bg-violet-500 mt-6 transform rotate-45 transition-transform hover:-translate-y-2 flex items-center justify-center'
-        >
-          <span className="text-white transform -rotate-45">Diamond</span>
-        </Toolbar.Button>
-      </Toolbar.Root>
+      
+      <Toolbar
+        addSquareNode={() => addNode('square')}
+        addCircleNode={() => addNode('circle')}
+        addDiamondNode={() => addNode('diamond')}
+      />
     </div>
   );
 }

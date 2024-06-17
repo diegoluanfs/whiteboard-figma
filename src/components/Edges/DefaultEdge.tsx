@@ -59,3 +59,5 @@ export function DefaultEdge({
     </>
   );
 }
+
+export default DefaultEdge; // Exportando o componente DefaultEdge

@@ -13,8 +13,9 @@ import { Square } from "./components/Nodes/Square";
 import { Circle } from "./components/Nodes/Circle";
 import { Diamond } from "./components/Nodes/Diamond";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import Toolbar from './components/Toolbar';
+import { v4 as uuidv4 } from 'uuid';
 
 type NodeType = "square" | "circle" | "diamond";
 
@@ -28,7 +29,7 @@ interface Node {
 const NODE_TYPES = {
   square: Square,
   circle: Circle,
-  diamond: Diamond
+  diamond: Diamond,
 };
 
 const EDGE_TYPES = {
@@ -43,27 +44,41 @@ const INITIAL_NODES: Node[] = [
       x: 200,
       y: 200,
     },
-    data: { label: 'Node Start' },
+    data: { label: 'Node Start (start)' },
   },
   {
-    id: crypto.randomUUID(),
+    id: uuidv4(),
     type: "square",
     position: {
       x: 650,
       y: 200,
     },
-    data: { label: 'Node 1' },
-  },
-  {
-    id: crypto.randomUUID(),
-    type: "diamond",
-    position: {
-      x: 1000,
-      y: 200,
-    },
-    data: { label: 'Node 4' },
+    data: { label: `${uuidv4()}` },
   },
 ];
+
+const NodeWithEditableLabel = ({ id, data }: { id: string, data: { label: string } }) => {
+  const [label, setLabel] = useState(data.label);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLabel(event.target.value);
+    // handleLabelChange(id, event.target.value);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        className="bg-transparent border-none text-center"
+        value={label}
+        onChange={handleChange}
+        style={{ width: '100%' }}
+      />
+      <div className="absolute top-0 right-0 mt-2 mr-2 bg-gray-200 p-1 text-xs rounded shadow">
+        {id}
+      </div>
+    </div>
+  );
+};
 
 function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -71,41 +86,69 @@ function App() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      // Verifica se a conexão é entre nós diferentes
       if (connection.source !== connection.target) {
         const existingEdgeIndex = edges.findIndex(
           (edge) =>
             edge.source === connection.source && edge.target === connection.target
         );
-  
-        // Verifica se já existe um edge com a mesma origem e destino
+
         if (existingEdgeIndex !== -1) {
-          // Remove o edge existente
           const newEdges = [...edges];
           newEdges.splice(existingEdgeIndex, 1);
           setEdges(newEdges);
         }
-  
-        // Adiciona o edge apenas se não houver um existente
+
         setEdges((prevEdges) => addEdge(connection, prevEdges));
       }
     },
     [edges, setEdges]
   );
-   
 
   const addNode = useCallback((type: NodeType) => {
+    const newId = uuidv4();
     const newNode: Node = {
-      id: crypto.randomUUID(),
+      id: newId,
       type,
       position: { x: 0, y: 0 },
-      data: { label: `${type.charAt(0).toUpperCase()}${type.slice(1)} Node` },
+      data: { label: `${newId}` },
     };
     setNodes((prevNodes) => [...prevNodes, newNode]);
   }, [setNodes]);
 
+  const handleLabelChange = useCallback((id: string, newLabel: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: newLabel,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
+
+  const handleSave = () => {
+    const dataToSave = {
+      nodes: nodes,
+      edges: edges,
+    };
+
+    console.log(JSON.stringify(dataToSave, null, 2));
+  };
+
   return (
     <div className="w-screen h-screen">
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
+        onClick={handleSave}
+      >
+        Salvar
+      </button>
       <ReactFlow
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
@@ -123,7 +166,6 @@ function App() {
         <Controls />
       </ReactFlow>
 
-      
       <Toolbar
         addSquareNode={() => addNode('square')}
         addCircleNode={() => addNode('circle')}

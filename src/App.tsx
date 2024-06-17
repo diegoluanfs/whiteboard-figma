@@ -14,7 +14,8 @@ import { Square } from "./components/Nodes/Square";
 import { Circle } from "./components/Nodes/Circle";
 import { Diamond } from "./components/Nodes/Diamond";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
-import { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+
 
 const NODE_TYPES = {
   square: Square,
@@ -28,38 +29,29 @@ const EDGE_TYPES = {
 
 const INITIAL_NODES = [
   {
+    id: "start",
+    type: "circle",
+    position: {
+      x: 200,
+      y: 200,
+    },
+    data: { label: 'Node Start' },
+  },
+  {
     id: crypto.randomUUID(),
     type: "square",
     position: {
-      x: 200,
-      y: 400,
+      x: 650,
+      y: 200,
     },
     data: { label: 'Node 1' },
   },
   {
     id: crypto.randomUUID(),
-    type: "square",
-    position: {
-      x: 1000,
-      y: 400,
-    },
-    data: { label: 'Node 2' },
-  },
-  {
-    id: crypto.randomUUID(),
-    type: "circle",
-    position: {
-      x: 2000,
-      y: 400,
-    },
-    data: { label: 'Node 3' },
-  },
-  {
-    id: crypto.randomUUID(),
     type: "diamond",
     position: {
-      x: 3000,
-      y: 400,
+      x: 1000,
+      y: 200,
     },
     data: { label: 'Node 4' },
   },
@@ -69,9 +61,31 @@ function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
 
-  const onConnect = useCallback((connection: Connection) => {
-    return setEdges((edges) => addEdge(connection, edges));
-  }, []);
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      const existingEdge = edges.find(
+        (edge) =>
+          edge.source === connection.source && edge.target === connection.target
+      );
+
+      // Verifica se já existe um edge com a mesma origem e destino
+      if (!existingEdge) {
+        // Adiciona o edge apenas se não houver um existente
+        setEdges((prevEdges) => addEdge(connection, prevEdges));
+      }
+    },
+    [edges, setEdges]
+  );
+
+  const addNode = useCallback((type: NodeType) => {
+    const newNode: Node = {
+      id: `node-${nodes.length + 1}`,
+      type,
+      position: { x: 0, y: 0 },
+      data: { label: `${type.charAt(0).toUpperCase()}${type.slice(1)} Node` },
+    };
+    setNodes((prevNodes) => [...prevNodes, newNode]);
+  }, [nodes]);
 
   function addSquareNode() {
     setNodes(node => [

@@ -52,7 +52,7 @@ export function DefaultEdge({
             value={label}
             onChange={handleLabelChange}
             className="bg-transparent border-none text-center"
-            placeholder="Enter text"
+            placeholder=""
           />
         </foreignObject>
       </Draggable>

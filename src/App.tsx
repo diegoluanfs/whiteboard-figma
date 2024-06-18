@@ -45,16 +45,7 @@ const INITIAL_NODES: Node[] = [
       x: 200,
       y: 200,
     },
-    data: { label: 'Node Start (start)' },
-  },
-  {
-    id: uuidv4(),
-    type: "square",
-    position: {
-      x: 650,
-      y: 200,
-    },
-    data: { label: `${uuidv4()}` },
+    data: { label: 'Mensagem Recebida' },
   },
 ];
 

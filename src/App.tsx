@@ -6,6 +6,7 @@ import ReactFlow, {
   Controls,
   useEdgesState,
   useNodesState,
+  Node as ReactFlowNode,
 } from "reactflow";
 import { zinc } from "tailwindcss/colors";
 import "reactflow/dist/style.css";
@@ -13,7 +14,7 @@ import { Square } from "./components/Nodes/Square";
 import { Circle } from "./components/Nodes/Circle";
 import { Diamond } from "./components/Nodes/Diamond";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import Toolbar from './components/Toolbar';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -83,6 +84,7 @@ const NodeWithEditableLabel = ({ id, data }: { id: string, data: { label: string
 function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -132,14 +134,55 @@ function App() {
     );
   }, [setNodes]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const dataToSave = {
       nodes: nodes,
       edges: edges,
     };
 
+    fetch('https://localhost:7154/api/ProcessFlow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dataToSave),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+
     console.log(JSON.stringify(dataToSave, null, 2));
-  };
+  }, [nodes, edges]);
+
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    setSelectedNode(node.id);
+  }, []);
+
+  const handleDeleteNode = useCallback(() => {
+    if (selectedNode) {
+      // alert(`Deletando o nó com ID: ${selectedNode}`);
+      setNodes((nds) => nds.filter((node) => node.id !== selectedNode));
+      setEdges((eds) => eds.filter((edge) => edge.source !== selectedNode && edge.target !== selectedNode));
+      setSelectedNode(null);
+    }
+  }, [selectedNode, setNodes, setEdges]);
+  
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Del') {
+        handleDeleteNode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleDeleteNode]);
 
   return (
     <div className="w-screen h-screen">
@@ -157,6 +200,7 @@ function App() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodesChange={onNodesChange}
+        onNodeClick={handleNodeClick}
         connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{
           type: "default",

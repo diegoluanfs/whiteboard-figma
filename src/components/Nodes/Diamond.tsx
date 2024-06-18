@@ -5,10 +5,10 @@ import '@reactflow/node-resizer/dist/style.css';
 
 export function Diamond({ data, selected }: NodeProps) {
   return (
-    <div className="bg-violet-500 w-full h-full min-w-[200px] min-h-[200px] relative transform rotate-45">
+    <div className="bg-violet-500 w-full h-full min-w-[50px] min-h-[50px] relative transform rotate-45">
       <NodeResizer 
-        minWidth={200}
-        minHeight={200}
+        minWidth={50}
+        minHeight={50}
         isVisible={selected}
         lineClassName="border-blue-400"
         handleClassName="h-3 w-3 bg-white border-2 rounded border-blue-400"

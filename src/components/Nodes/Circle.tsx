@@ -5,10 +5,10 @@ import '@reactflow/node-resizer/dist/style.css';
 
 export function Circle({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-4 border-violet-500 rounded-full w-full h-full min-w-[200px] min-h-[200px] flex items-center justify-center">
+    <div className="bg-white border-4 border-violet-500 rounded-full w-full h-full min-w-[50px] min-h-[50px] flex items-center justify-center">
       <NodeResizer 
-        minWidth={200}
-        minHeight={200}
+        minWidth={50}
+        minHeight={50}
         isVisible={selected}
         lineClassName="border-blue-400"
         handleClassName="h-3 w-3 bg-white border-2 rounded border-blue-400"

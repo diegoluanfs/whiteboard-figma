@@ -23,12 +23,12 @@ const ToolbarComponent: React.FC<ToolbarProps> = ({
       >
         <span className="text-white">Square</span>
       </Toolbar.Button>
-      <Toolbar.Button
+      {/* <Toolbar.Button
         onClick={addCircleNode}
         className="w-16 h-16 bg-violet-500 mt-6 rounded-full transition-transform hover:-translate-y-2 flex items-center justify-center"
       >
         <span className="text-white">Circle</span>
-      </Toolbar.Button>
+      </Toolbar.Button> */}
       <Toolbar.Button
         onClick={addDiamondNode}
         className="w-12 h-12 bg-violet-500 mt-6 transform rotate-45 transition-transform hover:-translate-y-2 flex items-center justify-center"

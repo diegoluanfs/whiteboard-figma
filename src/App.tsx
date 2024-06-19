@@ -17,6 +17,9 @@ import { DefaultEdge } from "./components/Edges/DefaultEdge";
 import React, { useCallback, useState, useEffect } from "react";
 import Toolbar from './components/Toolbar';
 import { v4 as uuidv4 } from 'uuid';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
+
 
 type NodeType = "square" | "circle" | "diamond";
 
@@ -49,33 +52,15 @@ const INITIAL_NODES: Node[] = [
   },
 ];
 
-const NodeWithEditableLabel = ({ id, data }: { id: string, data: { label: string } }) => {
-  const [label, setLabel] = useState(data.label);
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setLabel(event.target.value);
-    // handleLabelChange(id, event.target.value);
-  };
-
-  return (
-    <div className="relative">
-      <input
-        className="bg-transparent border-none text-center"
-        value={label}
-        onChange={handleChange}
-        style={{ width: '100%' }}
-      />
-      <div className="absolute top-0 right-0 mt-2 mr-2 bg-gray-200 p-1 text-xs rounded shadow">
-        {id}
-      </div>
-    </div>
-  );
-};
-
 function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [toolbarVisible, setToolbarVisible] = useState(false);
+
+  const toggleToolbar = () => {
+    setToolbarVisible((prev) => !prev);
+  };
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -106,23 +91,6 @@ function App() {
       data: { label: `${newId}` },
     };
     setNodes((prevNodes) => [...prevNodes, newNode]);
-  }, [setNodes]);
-
-  const handleLabelChange = useCallback((id: string, newLabel: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              label: newLabel,
-            },
-          };
-        }
-        return node;
-      })
-    );
   }, [setNodes]);
 
   const handleSave = useCallback(() => {
@@ -176,13 +144,18 @@ function App() {
   }, [handleDeleteNode]);
 
   return (
-    <div className="w-screen h-screen">
+    <div className="w-screen h-screen relative">
       <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4 absolute bottom-0 right-0 z-10"
         onClick={handleSave}
       >
         Salvar
       </button>
+      
+      <Fab size="medium" color="secondary" aria-label="add" className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+        <AddIcon onClick={toggleToolbar} />
+      </Fab>
+
       <ReactFlow
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
@@ -196,16 +169,19 @@ function App() {
         defaultEdgeOptions={{
           type: "default",
         }}
+        className="absolute top-0 left-0 w-full h-full"
       >
         <Background gap={12} size={2} color={zinc[200]} />
         <Controls />
       </ReactFlow>
 
-      <Toolbar
-        addSquareNode={() => addNode('square')}
-        addCircleNode={() => addNode('circle')}
-        addDiamondNode={() => addNode('diamond')}
-      />
+      {toolbarVisible && (
+        <Toolbar
+          addSquareNode={() => addNode('square')}
+          addCircleNode={() => addNode('circle')}
+          addDiamondNode={() => addNode('diamond')}
+        />
+      )}
     </div>
   );
 }

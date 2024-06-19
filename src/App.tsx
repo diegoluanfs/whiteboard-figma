@@ -1,4 +1,3 @@
-import React, { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -8,25 +7,27 @@ import ReactFlow, {
   useEdgesState,
   useNodesState,
   Node as ReactFlowNode,
-} from 'reactflow';
-import { zinc } from 'tailwindcss/colors';
-import 'reactflow/dist/style.css';
-import { Square } from './components/Nodes/Square';
-import { Circle } from './components/Nodes/Circle';
-import { Diamond } from './components/Nodes/Diamond';
-import { DefaultEdge } from './components/Edges/DefaultEdge';
-import ToolbarComponent from './components/Toolbar';
+} from "reactflow";
+import { zinc } from "tailwindcss/colors";
+import "reactflow/dist/style.css";
+import { Square } from "./components/Nodes/Square";
+import { Circle } from "./components/Nodes/Circle";
+import { Diamond } from "./components/Nodes/Diamond";
+import { DefaultEdge } from "./components/Edges/DefaultEdge";
+import React, { useCallback, useState, useEffect } from "react";
+import Toolbar from './components/Toolbar';
+import Modal from './components/Modal';
 import { v4 as uuidv4 } from 'uuid';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
 
-type NodeType = 'square' | 'circle' | 'diamond';
+type NodeType = "square" | "circle" | "diamond";
 
 interface Node {
   id: string;
   type: NodeType;
   position: { x: number; y: number };
-  data: { label: string };
+  data: { label: string; uniqueId?: string; textareaValue?: string };
 }
 
 const NODE_TYPES = {
@@ -41,8 +42,8 @@ const EDGE_TYPES = {
 
 const INITIAL_NODES: Node[] = [
   {
-    id: 'start',
-    type: 'circle',
+    id: "start",
+    type: "circle",
     position: {
       x: 200,
       y: 200,
@@ -55,8 +56,9 @@ function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null);
   const [toolbarVisible, setToolbarVisible] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [nodeTypeToAdd, setNodeTypeToAdd] = useState<NodeType | null>(null);
 
   const toggleToolbar = () => {
     setToolbarVisible((prev) => !prev);
@@ -82,29 +84,26 @@ function App() {
     [edges, setEdges]
   );
 
-  const addNode = useCallback(
-    (type: NodeType) => {
+  const addNode = useCallback((type: NodeType) => {
+    setNodeTypeToAdd(type);
+    setModalOpen(true);
+  }, []);
+
+  const handleSave = useCallback((text: string) => {
+    if (nodeTypeToAdd) {
       const newId = uuidv4();
       const newNode: Node = {
         id: newId,
-        type,
+        type: nodeTypeToAdd,
         position: { x: 0, y: 0 },
-        data: { label: `${newId}` },
+        data: { label: text, uniqueId: uuidv4(), textareaValue: text }, // Atribuindo textareaValue ao criar o nó
       };
-      setNodes((prevNodes) => [...prevNodes, newNode]);
-    },
-    [setNodes]
-  );
-
-  const handleSave = useCallback(
-    (nodeType: 'square' | 'diamond') => {
-      addNode(nodeType);
-
+  
       const dataToSave = {
-        nodes: nodes,
-        edges: edges,
+        nodes: [...nodes, newNode], // Incluindo o novo nó na lista de nós a serem salvos
+        edges,
       };
-
+  
       fetch('https://localhost:7154/api/ProcessFlow', {
         method: 'POST',
         headers: {
@@ -112,32 +111,34 @@ function App() {
         },
         body: JSON.stringify(dataToSave),
       })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('Success:', data);
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
-
-      console.log(JSON.stringify(dataToSave, null, 2));
-    },
-    [addNode, nodes, edges]
-  );
+      .then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  
+      setNodes(prevNodes => [...prevNodes, newNode]);
+      setNodeTypeToAdd(null);
+      setModalOpen(false);
+    }
+  }, [nodeTypeToAdd, nodes, edges, setNodes]);  
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node.id);
-    setSelectedNodeType(node.type as NodeType);
   }, []);
 
   const handleDeleteNode = useCallback(() => {
-    if (selectedNode && selectedNodeType !== 'circle') {
-      setNodes((nds) => nds.filter((node) => node.id !== selectedNode));
-      setEdges((eds) => eds.filter((edge) => edge.source !== selectedNode && edge.target !== selectedNode));
-      setSelectedNode(null);
-      setSelectedNodeType(null);
+    if (selectedNode) {
+      const node = nodes.find((n) => n.id === selectedNode);
+      if (node && node.type !== 'circle') {
+        setNodes((nds) => nds.filter((n) => n.id !== selectedNode));
+        setEdges((eds) => eds.filter((edge) => edge.source !== selectedNode && edge.target !== selectedNode));
+        setSelectedNode(null);
+      }
     }
-  }, [selectedNode, selectedNodeType, setNodes, setEdges]);
+  }, [selectedNode, nodes, setNodes, setEdges]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -168,7 +169,9 @@ function App() {
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
         connectionMode={ConnectionMode.Loose}
-        defaultEdgeOptions={{ type: 'default' }}
+        defaultEdgeOptions={{
+          type: "default",
+        }}
         className="absolute top-0 left-0 w-full h-full"
       >
         <Background gap={12} size={2} color={zinc[200]} />
@@ -176,10 +179,44 @@ function App() {
       </ReactFlow>
 
       {toolbarVisible && (
-        <ToolbarComponent
-          onSave={handleSave}
+        <Toolbar
+          openModal={(type: NodeType) => addNode(type)}
         />
       )}
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+      />
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4 absolute bottom-0 right-0 z-10"
+        onClick={() => {
+          const dataToSave = {
+            nodes,
+            edges,
+          };
+
+          fetch('https://localhost:7154/api/ProcessFlow', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSave),
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Success:', data);
+            // Aqui você pode adicionar qualquer lógica adicional após o salvamento, se necessário
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
+        }}
+      >
+        Salvar Fluxo
+      </button>
+
     </div>
   );
 }

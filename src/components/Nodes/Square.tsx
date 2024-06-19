@@ -18,7 +18,19 @@ export function Square({ data, selected }: SquareProps) {
   return (
     <div
       className="bg-violet-500 rounded relative"
-      style={{ width: size.width, height: size.height, minWidth: 100, minHeight: 100 }}
+      style={{ 
+        width: size.width, 
+        height: size.height, 
+        minWidth: 100, 
+        minHeight: 100,
+        backgroundColor: 'lightgray',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '10px',
+        wordWrap: 'break-word',
+      }}
     >
       <NodeResizer
         minWidth={100}
@@ -29,12 +41,12 @@ export function Square({ data, selected }: SquareProps) {
         onResize={handleResize}
         keepAspectRatio
       />
-      <Handle
+      {/* <Handle
         id="right"
         type="source"
         position={Position.Right}
         className="-right-5 w-3 h-3 bg-blue-400/80"
-      />
+      /> */}
       <div className="absolute inset-0 bg-transparent text-white p-2">
         {data.label}
       </div>

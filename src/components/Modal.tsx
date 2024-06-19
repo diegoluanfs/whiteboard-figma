@@ -1,47 +1,52 @@
-// src/components/Modal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (text: string) => void;
+  initialText: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSave }) => {
-  const [text, setText] = useState('');
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSave, initialText }) => {
+  const [text, setText] = useState(initialText);
+  const [isTextEntered, setIsTextEntered] = useState(false); // Estado para controlar se há texto no textarea
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setText(initialText);
+  }, [initialText]);
+
+  useEffect(() => {
+    // Verifica se há texto no textarea
+    setIsTextEntered(text.trim().length > 0);
+  }, [text]);
 
   const handleSave = () => {
-    if (text.trim()) {
-      onSave(text);
-      onClose();
-    }
+    onSave(text.trim()); // Salvando apenas o texto trimmado
+    setText('');
+    onClose();
   };
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-gray-700 bg-opacity-50 flex items-center justify-center z-10">
-      <div className="bg-white rounded-lg p-8">
-        <h2 className="text-xl font-bold mb-4">Coloque a resposta aqui</h2>
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-4 rounded">
         <textarea
-          className="w-full h-40 border border-gray-300 rounded p-2"
-          placeholder="Digite seu conteúdo aqui..."
           value={text}
+          placeholder='Escreva sua mensagem'
           onChange={(e) => setText(e.target.value)}
+          className="w-full h-40 p-2 border border-gray-300 rounded"
         />
-        <div className="mt-4 flex justify-between">
+        <div className="flex justify-between mt-2">
+          <button onClick={onClose} className="bg-red-500 text-white px-4 py-2 rounded">Close</button>
           <button
-            className="bg-gray-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
-            onClick={onClose}
-          >
-            Cancelar
-          </button>
-          <button
-            className={`bg-blue-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ${!text.trim() && 'opacity-50 cursor-not-allowed'}`}
             onClick={handleSave}
-            disabled={!text.trim()}
+            className={`px-4 py-2 rounded mr-2 ${isTextEntered ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+            disabled={!isTextEntered} // Desabilita o botão se não houver texto no textarea
           >
-            Salvar
+            Save
           </button>
         </div>
       </div>

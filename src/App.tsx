@@ -59,6 +59,7 @@ function App() {
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [nodeTypeToAdd, setNodeTypeToAdd] = useState<NodeType | null>(null);
+  const [editNodeData, setEditNodeData] = useState<{ id: string; text: string } | null>(null);
 
   const toggleToolbar = () => {
     setToolbarVisible((prev) => !prev);
@@ -122,11 +123,22 @@ function App() {
       setNodes(prevNodes => [...prevNodes, newNode]);
       setNodeTypeToAdd(null);
       setModalOpen(false);
+    } else if (editNodeData) {
+      setNodes(prevNodes => prevNodes.map(node => 
+        node.id === editNodeData.id ? { ...node, data: { ...node.data, label: text, textareaValue: text } } : node
+      ));
+      setEditNodeData(null);
+      setModalOpen(false);
     }
-  }, [nodeTypeToAdd, nodes, edges, setNodes]);  
+  }, [nodeTypeToAdd, nodes, edges, setNodes, editNodeData]);
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node.id);
+  }, []);
+
+  const handleNodeDoubleClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    setEditNodeData({ id: node.id, text: node.data.textareaValue || '' });
+    setModalOpen(true);
   }, []);
 
   const handleDeleteNode = useCallback(() => {
@@ -168,6 +180,7 @@ function App() {
         onConnect={onConnect}
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick} // Adicionando o evento de duplo clique
         connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{
           type: "default",
@@ -186,8 +199,9 @@ function App() {
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setEditNodeData(null); }}
         onSave={handleSave}
+        initialText={editNodeData ? editNodeData.text : ''} // Passando o texto inicial para o modal
       />
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4 absolute bottom-0 right-0 z-10"

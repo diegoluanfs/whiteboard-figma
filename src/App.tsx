@@ -10,9 +10,10 @@ import ReactFlow, {
 } from "reactflow";
 import { zinc } from "tailwindcss/colors";
 import "reactflow/dist/style.css";
-import { Square } from "./components/Nodes/Square";
-import { Circle } from "./components/Nodes/Circle";
-import { Diamond } from "./components/Nodes/Diamond";
+import { Square } from "./components/Nodes/Square/Square";
+import { Circle } from "./components/Nodes/Circle/Circle";
+import { Diamond } from "./components/Nodes/Diamond/Diamond";
+import { Rectangle } from "./components/Nodes/Rectangle";
 import { DefaultEdge } from "./components/Edges/DefaultEdge";
 import React, { useCallback, useState, useEffect } from "react";
 import Toolbar from './components/Toolbar';
@@ -21,19 +22,20 @@ import { v4 as uuidv4 } from 'uuid';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
 
-type NodeType = "square" | "circle" | "diamond";
+type NodeType = "square" | "circle" | "diamond" | "rectangle";
 
 interface Node {
   id: string;
   type: NodeType;
   position: { x: number; y: number };
-  data: { label: string; uniqueId?: string; textareaValue?: string };
+  data: { label: string; uniqueId?: string; textareaValue?: string; parentId?: string };
 }
 
 const NODE_TYPES = {
   square: Square,
   circle: Circle,
   diamond: Diamond,
+  rectangle: Rectangle,
 };
 
 const EDGE_TYPES = {
@@ -59,7 +61,7 @@ function App() {
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [nodeTypeToAdd, setNodeTypeToAdd] = useState<NodeType | null>(null);
-  const [editNodeData, setEditNodeData] = useState<{ id: string; text: string } | null>(null);
+  const [editNodeData, setEditNodeData] = useState<{ id: string; text: string; } | null>(null);
 
   const toggleToolbar = () => {
     setToolbarVisible((prev) => !prev);
@@ -90,48 +92,39 @@ function App() {
     setModalOpen(true);
   }, []);
 
-  const handleSave = useCallback((text: string) => {
-    if (nodeTypeToAdd) {
-      const newId = uuidv4();
-      const newNode: Node = {
-        id: newId,
-        type: nodeTypeToAdd,
-        position: { x: 0, y: 0 },
-        data: { label: text, uniqueId: uuidv4(), textareaValue: text }, // Atribuindo textareaValue ao criar o nó
-      };
-  
-      const dataToSave = {
-        nodes: [...nodes, newNode], // Incluindo o novo nó na lista de nós a serem salvos
-        edges,
-      };
-  
-      fetch('https://localhost:7154/api/ProcessFlow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSave),
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Success:', data);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  
-      setNodes(prevNodes => [...prevNodes, newNode]);
-      setNodeTypeToAdd(null);
-      setModalOpen(false);
-    } else if (editNodeData) {
-      setNodes(prevNodes => prevNodes.map(node => 
-        node.id === editNodeData.id ? { ...node, data: { ...node.data, label: text, textareaValue: text } } : node
-      ));
-      setEditNodeData(null);
-      setModalOpen(false);
-    }
-  }, [nodeTypeToAdd, nodes, edges, setNodes, editNodeData]);
+  const [modalValue, setModalValue] = useState(null);
 
+   const handleSave = useCallback((shapes: { message: string; id: string; type: NodeType; parentId: string | null; }[]) => {
+      console.log('shapes:', shapes); // Log shapes array
+    
+      let contElemt = 0;
+      let groupId = 0;
+      shapes.forEach(shape => {
+        const { message, id, type, parentId } = shape;
+        let squareNode: Node | null = null;
+        let rectangleNode: Node | null = null;
+        if (shape.type === 'square') {
+          squareNode = {
+            id: shape.id,
+            type: shape.type,
+            position: { x: 0, y: 0 },
+            data: { label: message },
+          }
+        } else {
+          rectangleNode = {
+            id: shape.id,
+            type: shape.type,
+            position: { x: 0, y: 200+(50*contElemt) },
+            data: { label: message },
+          };
+          contElemt++;
+        }
+          
+        setNodes(prevNodes => [...prevNodes, squareNode, rectangleNode].filter(node => node !== null) as Node[]);
+        setModalOpen(false);
+      });
+    }, [nodeTypeToAdd, editNodeData, setNodes]);
+  
   const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node.id);
   }, []);
@@ -180,7 +173,7 @@ function App() {
         onConnect={onConnect}
         onNodesChange={onNodesChange}
         onNodeClick={handleNodeClick}
-        onNodeDoubleClick={handleNodeDoubleClick} // Adicionando o evento de duplo clique
+        onNodeDoubleClick={handleNodeDoubleClick}
         connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{
           type: "default",
@@ -200,9 +193,14 @@ function App() {
       <Modal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditNodeData(null); }}
-        onSave={handleSave}
-        initialText={editNodeData ? editNodeData.text : ''} // Passando o texto inicial para o modal
+        onSave={(shapes) => { 
+          console.log("Valores retornados do modal:", shapes); // Adicione esta linha
+          handleSave(shapes) 
+        }}
+        initialText={editNodeData ? editNodeData.text : ''}
+        id={editNodeData ? editNodeData.id : ''}
       />
+
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4 absolute bottom-0 right-0 z-10"
         onClick={() => {
@@ -221,7 +219,6 @@ function App() {
           .then(response => response.json())
           .then(data => {
             console.log('Success:', data);
-            // Aqui você pode adicionar qualquer lógica adicional após o salvamento, se necessário
           })
           .catch((error) => {
             console.error('Error:', error);
@@ -230,7 +227,6 @@ function App() {
       >
         Salvar Fluxo
       </button>
-
     </div>
   );
 }

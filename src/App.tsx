@@ -28,7 +28,8 @@ interface Node {
   id: string;
   type: NodeType;
   position: { x: number; y: number };
-  data: { label: string; uniqueId?: string; textareaValue?: string; parentId?: string };
+  groupId: string;
+  data: { label: string; uniqueId?: string; textareaValue?: string; parentId?: string; groupId?: string };
 }
 
 const NODE_TYPES = {
@@ -46,6 +47,7 @@ const INITIAL_NODES: Node[] = [
   {
     id: "start",
     type: "circle",
+    groupId: 'start',
     position: {
       x: 200,
       y: 200,
@@ -57,7 +59,7 @@ const INITIAL_NODES: Node[] = [
 function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string[]>([]);
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [nodeTypeToAdd, setNodeTypeToAdd] = useState<NodeType | null>(null);
@@ -94,11 +96,11 @@ function App() {
 
   const [modalValue, setModalValue] = useState(null);
 
-   const handleSave = useCallback((shapes: { message: string; id: string; type: NodeType; parentId: string | null; }[]) => {
-      console.log('shapes:', shapes); // Log shapes array
+   const handleSave = useCallback((shapes: { message: string; id: string; type: NodeType; parentId: string | null; groupId: string }[]) => {
+      console.log('shapes:', shapes);
     
       let contElemt = 0;
-      let groupId = 0;
+
       shapes.forEach(shape => {
         const { message, id, type, parentId } = shape;
         let squareNode: Node | null = null;
@@ -107,6 +109,7 @@ function App() {
           squareNode = {
             id: shape.id,
             type: shape.type,
+            groupId: shape.groupId,
             position: { x: 0, y: 0 },
             data: { label: message },
           }
@@ -114,6 +117,7 @@ function App() {
           rectangleNode = {
             id: shape.id,
             type: shape.type,
+            groupId: shape.groupId,
             position: { x: 0, y: 200+(50*contElemt) },
             data: { label: message },
           };
@@ -125,9 +129,15 @@ function App() {
       });
     }, [nodeTypeToAdd, editNodeData, setNodes]);
   
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    setSelectedNode(node.id);
-  }, []);
+const handleNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+  const groupId = node.data.groupId;
+  if (groupId) {
+    const nodesInGroup = nodes.filter(n => n.data.groupId === groupId);
+    setSelectedNode(nodesInGroup.map(n => n.id));
+  } else {
+    setSelectedNode(node.data.groupId);
+  }
+}, [nodes]);
 
   const handleNodeDoubleClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     setEditNodeData({ id: node.id, text: node.data.textareaValue || '' });
@@ -135,12 +145,12 @@ function App() {
   }, []);
 
   const handleDeleteNode = useCallback(() => {
-    if (selectedNode) {
-      const node = nodes.find((n) => n.id === selectedNode);
+    if (selectedNode.length > 0) {
+      const node = nodes.find((n) => n.id === selectedNode[0]);
       if (node && node.type !== 'circle') {
-        setNodes((nds) => nds.filter((n) => n.id !== selectedNode));
-        setEdges((eds) => eds.filter((edge) => edge.source !== selectedNode && edge.target !== selectedNode));
-        setSelectedNode(null);
+        setNodes((nds) => nds.filter((n) => n.id !== selectedNode[0]));
+        setEdges((eds) => eds.filter((edge) => edge.source !== selectedNode[0] && edge.target !== selectedNode[0]));
+        setSelectedNode([]);
       }
     }
   }, [selectedNode, nodes, setNodes, setEdges]);

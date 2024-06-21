@@ -3,8 +3,8 @@ import { Handle, Position } from "reactflow";
 import { NodeResizer } from "@reactflow/node-resizer";
 import { D3DragEvent } from 'd3-drag';
 import "@reactflow/node-resizer/dist/style.css";
-import { SquareProps } from './Types';
-import { squareStyles } from './Styles';
+import { SquareProps } from './types';
+import { squareStyles } from './styles';
 
 export function Square({ data, selected }: SquareProps) {
   const [size, setSize] = useState({ width: 200, height: 200 });

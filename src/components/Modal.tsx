@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (shapes: { message: string, id: string, type: string, parentId: string | null }[]) => void;
+  onSave: (shapes: { message: string, id: string, type: string, parentId: string | null , groupId: string}[]) => void;
   id: string;
   initialText: string;
 }
@@ -18,19 +18,28 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSave, initialText }) =
 
   const handleSave = () => {
     let parentId: string;
+    let message: string;
+    const groupId = uuidv4();
   
+    let options = 0;
     const shapes = textareas.map((textarea, index) => {
       const id = uuidv4();
-  
+      let message: string;
+    
       if (index === 0) {
         parentId = id;
+        message = textarea;
+      } else {
+        options = options + 1;
+        message = options + ' - ' + textarea;
       }
-  
+    
       return {
+        groupId: groupId,
         type: index === 0 ? 'square' : 'rectangle',
-        message: textarea,
         id: id,
-        parentId: index === 0 ? null : parentId
+        parentId: index === 0 ? null : parentId,
+        message: message
       };
     });
   
